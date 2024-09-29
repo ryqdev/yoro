@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "data_feed",
+    "strategy",
+    "portfolio",
+    "worker", 
+    ]

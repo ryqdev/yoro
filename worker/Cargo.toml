@@ -1,0 +1,9 @@
+[package]
+name = "worker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+data_feed = {path = "../data_feed"}
+strategy = {path = "../strategy"}
+portfolio = {path = "../portfolio"}
