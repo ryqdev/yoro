@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 decimal = {path = "../decimal"}
+
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.115"
+reqwest = { version = "0.12.2", features = ["json", "blocking"] }

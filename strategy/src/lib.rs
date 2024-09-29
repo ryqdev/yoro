@@ -1,4 +1,4 @@
-use data_feed::Data;
+use data_feed::TickerPrice;
 
 #[derive(Debug)]
 enum TradeType {
@@ -13,7 +13,7 @@ pub struct Decision {
     size: i32
 }
 
-pub fn get_decision(data: Data) -> Decision {
+pub fn get_decision(data: TickerPrice) -> Decision {
     Decision {
         symbol: "Test".to_string(),
         side: TradeType::Long,

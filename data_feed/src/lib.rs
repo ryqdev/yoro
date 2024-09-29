@@ -1,20 +1,14 @@
-use decimal;
+mod restful;
+use restful::binance::get_from_binance_api;
+use serde::Deserialize;
 
-#[derive(Debug)]
-pub struct Data{
-    time_stamp: u64,
-    current_price: decimal::Price,
+
+#[derive(Deserialize, Debug)]
+pub struct TickerPrice {
+    symbol: String,
+    price: String,
 }
 
-impl Data {
-    pub fn new(time_stamp: u64, current_price: decimal::Price) -> Data {
-        Data {
-            time_stamp,
-            current_price,
-        }
-    }
-}
-
-pub fn get_data() -> Data {
-    Data::new(123456789, decimal::Price::new(100.0))
+pub fn get_data() -> TickerPrice {
+    get_from_binance_api().expect("Failed to get data from Binance API")
 }
