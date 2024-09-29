@@ -1,5 +1,22 @@
+use data_feed::Data;
 
-pub fn get_decision(data: String) -> String {
-    let decision = format!("Decision made from data: {}", data);
-    decision
+#[derive(Debug)]
+enum TradeType {
+    Long,
+    Short,
+}
+
+#[derive(Debug)]
+pub struct Decision {
+    symbol: String,
+    side: TradeType,
+    size: i32
+}
+
+pub fn get_decision(data: Data) -> Decision {
+    Decision {
+        symbol: "Test".to_string(),
+        side: TradeType::Long,
+        size: 100
+    }
 }

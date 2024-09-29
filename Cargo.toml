@@ -5,4 +5,5 @@ members = [
     "strategy",
     "portfolio",
     "worker", 
+    "decimal", 
     ]

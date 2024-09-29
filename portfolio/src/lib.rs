@@ -1,3 +1,5 @@
-pub fn make_order(decision: String)  {
-    println!("Order made from decision: {}", decision);
+use strategy;
+
+pub fn make_order(decision: strategy::Decision)  {
+    println!("Order made from decision: {:?}", decision);
 }
