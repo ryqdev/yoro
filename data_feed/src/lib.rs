@@ -9,6 +9,6 @@ pub struct Data {
     pub price: String,
 }
 
-pub fn get_data() -> Data {
-    get_from_binance_api().expect("Failed to get data from Binance API")
+pub fn get_data(symbol: String) -> Data {
+    get_from_binance_api(symbol).expect("Failed to get data from Binance API")
 }

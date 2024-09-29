@@ -3,9 +3,7 @@ use std::error::Error;
 use crate::Data;
 
 
-pub fn get_from_binance_api() -> Result<Data, Box<dyn Error>> {
-    let symbol = "BTCUSDT";
-
+pub fn get_from_binance_api(symbol: String) -> Result<Data, Box<dyn Error>> {
     let url = format!("https://api.binance.com/api/v3/ticker/price?symbol={}", symbol);
 
     let response = reqwest::blocking::get(&url)?;
