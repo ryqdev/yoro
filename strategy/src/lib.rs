@@ -1,4 +1,4 @@
-use data_feed::TickerPrice;
+use data_feed::Data;
 
 #[derive(Debug)]
 enum TradeType {
@@ -10,13 +10,18 @@ enum TradeType {
 pub struct Decision {
     symbol: String,
     side: TradeType,
-    size: i32
+    size: i32,
 }
 
-pub fn get_decision(data: TickerPrice) -> Decision {
-    Decision {
-        symbol: "Test".to_string(),
-        side: TradeType::Long,
-        size: 100
+#[derive(Debug)]
+pub struct BaseOracle;
+
+impl  BaseOracle {
+    pub fn get_decision(data: Data) -> Decision {  
+        Decision {
+            symbol: data.symbol,
+            side: TradeType::Long,
+            size: 1,
+        }
     }
 }
