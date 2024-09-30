@@ -59,20 +59,24 @@ trait Worker {
     fn make_order(&self);
 }
 
-struct BaseWorker;
+struct BaseWorker {
+    data_feed: Data,
+    decision: Decision
+}
 
 impl Worker for BaseWorker {
-    fn get_data_feed(&self) -> &BaseWorker {
-        log::info!("Get data feed");
+    fn get_data_feed(&mut self) -> &self{
+        self.data_feed = data_feed::get_data_feed("BTCUSDT".to_string());
         self
     }
 
-    fn get_decision(&self) -> &BaseWorker{
-        log::info!("Get decision");
+    fn get_decision(&mut self) -> &self{
+        self.decision = strategy::BaseOracle::get_decision(&self.data_feed);
         self
     }
 
     fn make_order(&self) {
+        portfolio::make_order();
         log::info!("Make order");
     }
 }
@@ -87,7 +91,7 @@ fn main() {
 
     // Get a worker
     let worker: Box<dyn Worker> = match conf.config.strategy.as_str() {
-        "BaseOracle" => Box::new(BaseWorker),
+        "BaseOracle" => Box::new(BaseWorker{ data_feed: Data {}, decision: () }),
         _ => panic!("No such strategy"),
     };
 
