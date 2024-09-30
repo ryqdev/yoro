@@ -55,15 +55,21 @@ fn init_config(config_file_path: &str) -> Result<TomlData>{
 
 trait Worker {
     fn new() -> Box<dyn Worker> where Self: Sized;
-    fn get_data_feed(&mut self) -> &mut BaseWorker;
-    fn get_decision(&mut self) -> &mut BaseWorker;
-    fn make_order(&self);
+    fn set_data_feed(&mut self) -> &mut dyn Worker;
+    fn set_decision(&mut self) -> &mut dyn Worker;
+    fn set_order(&mut self) -> &mut dyn Worker;
+    fn run(&self);
 }
 
-#[derive(Debug,Default)]
+type DataFeedProcess = fn(String) -> Data;
+type StrategyProcess = fn(&Data) -> Decision;
+type OrderProcess = fn(&Decision);
+
+#[derive(Debug)]
 struct BaseWorker {
-    data_feed: Data,
-    decision: Decision
+    data_feed: DataFeedProcess,
+    strategy: StrategyProcess,
+    order: OrderProcess,
 }
 
 impl Worker for BaseWorker {
@@ -72,24 +78,34 @@ impl Worker for BaseWorker {
     {
         Box::new(
             BaseWorker {
-                data_feed: Data::default(),
-                decision: Decision::default()
+                data_feed: data_feed::get_data_feed,
+                strategy: strategy::BaseOracle::get_decision,
+                order: portfolio::make_order,
             }
         )
     }
-    fn get_data_feed(&mut self) -> &mut BaseWorker{
-        self.data_feed = data_feed::get_data_feed("BTCUSDT".to_string());
+    fn set_data_feed(&mut self) -> &mut dyn Worker {
+        self.data_feed = data_feed::get_data_feed;
         self
     }
 
-    fn get_decision(&mut self) -> &mut BaseWorker{
-        self.decision = strategy::BaseOracle::get_decision(&self.data_feed);
+    fn set_decision(&mut self) -> &mut dyn Worker {
+        self.strategy = strategy::BaseOracle::get_decision;
         self
     }
 
-    fn make_order(&self) {
-        portfolio::make_order();
+    fn set_order(&mut self) -> &mut dyn Worker {
+        self.order = portfolio::make_order;
         log::info!("Make order {:?}", self);
+        self
+    }
+
+    fn run(&self) {
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            let data = self.data_feed("BTCUSDT".to_string());
+            println!("self: {:?}", data);
+        }
     }
 }
 
@@ -102,8 +118,6 @@ fn main() {
     let conf = init_config("config.toml").expect("Failed to parse config file");
 
     // Pipeline
-    BaseWorker::new()
-        .get_data_feed()
-        .get_decision()
-        .make_order();
+    // TODO: use spawn to create multiple workers
+    BaseWorker::new().set_data_feed().set_decision().set_order().run();
 }
