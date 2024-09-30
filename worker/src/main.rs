@@ -3,16 +3,24 @@ use std::{
     fs
 };
 
-use data_feed;
-use strategy;
-use portfolio;
+use data_feed::{
+    Data,
+    get_data_feed
+};
+
+use strategy::{
+    Decision,
+    BaseOracle
+};
+
+use portfolio::{
+    make_order
+};
 
 use serde_derive::Deserialize;
 use anyhow::Result;
 use env_logger;
 use log;
-use data_feed::Data;
-use strategy::Decision;
 
 fn init_log() {
     env_logger::Builder::new()
@@ -78,24 +86,24 @@ impl Worker for BaseWorker {
     {
         Box::new(
             BaseWorker {
-                data_feed: data_feed::get_data_feed,
-                strategy: strategy::BaseOracle::get_decision,
-                order: portfolio::make_order,
+                data_feed: get_data_feed,
+                strategy: BaseOracle::get_decision,
+                order: make_order,
             }
         )
     }
     fn set_data_feed(&mut self) -> &mut dyn Worker {
-        self.data_feed = data_feed::get_data_feed;
+        self.data_feed = get_data_feed;
         self
     }
 
     fn set_decision(&mut self) -> &mut dyn Worker {
-        self.strategy = strategy::BaseOracle::get_decision;
+        self.strategy = BaseOracle::get_decision;
         self
     }
 
     fn set_order(&mut self) -> &mut dyn Worker {
-        self.order = portfolio::make_order;
+        self.order = make_order;
         log::info!("Make order {:?}", self);
         self
     }
@@ -103,8 +111,8 @@ impl Worker for BaseWorker {
     fn run(&self) {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(1));
-            let data = self.data_feed("BTCUSDT".to_string());
-            println!("self: {:?}", self);
+            let data = (self.data_feed)("BTCUSDT".to_string());
+            println!("self: {:?}", data);
         }
     }
 }
