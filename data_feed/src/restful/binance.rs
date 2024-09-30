@@ -13,7 +13,6 @@ pub fn get_from_binance_api(symbol: String) -> Result<Data, Box<dyn Error>> {
     }
 
     let ticker_price: Data = response.json()?;
-    println!("Symbol: {}, Price: {}", ticker_price.symbol, ticker_price.price);
 
     Ok(ticker_price)
 }

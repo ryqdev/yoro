@@ -49,9 +49,7 @@ struct TomlData {
 struct Config {
     broker: String,
     symbol: String,
-    time: String,
     strategy: String,
-    cash: f64
 }
 
 fn init_config(config_file_path: &str) -> Result<Config>{
@@ -94,9 +92,7 @@ impl Worker for BaseWorker {
                 config: Config {
                     broker: "".to_string(),
                     symbol: "".to_string(),
-                    time: "".to_string(),
                     strategy: "".to_string(),
-                    cash: 0.0,
                 },
             }
         )
