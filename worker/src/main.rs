@@ -54,15 +54,16 @@ struct Config {
     cash: f64
 }
 
-fn init_config(config_file_path: &str) -> Result<TomlData>{
+fn init_config(config_file_path: &str) -> Result<Config>{
     log::info!("start parsing config from {config_file_path}");
     let config_data: TomlData = toml::from_str(&*fs::read_to_string(config_file_path)?)?;
     log::info!("{:?}", config_data);
-    Ok(config_data)
+    Ok(config_data.config)
 }
 
 trait Worker {
     fn new() -> Box<dyn Worker> where Self: Sized;
+    fn load_config(&mut self, config_file_path: &str) -> &mut dyn Worker;
     fn set_data_feed(&mut self) -> &mut dyn Worker;
     fn set_decision(&mut self) -> &mut dyn Worker;
     fn set_order(&mut self) -> &mut dyn Worker;
@@ -78,6 +79,7 @@ struct BaseWorker {
     data_feed: DataFeedProcess,
     strategy: StrategyProcess,
     order: OrderProcess,
+    config: Config
 }
 
 impl Worker for BaseWorker {
@@ -89,9 +91,22 @@ impl Worker for BaseWorker {
                 data_feed: get_data_feed,
                 strategy: BaseOracle::get_decision,
                 order: make_order,
+                config: Config {
+                    broker: "".to_string(),
+                    symbol: "".to_string(),
+                    time: "".to_string(),
+                    strategy: "".to_string(),
+                    cash: 0.0,
+                },
             }
         )
     }
+
+    fn load_config(&mut self, config_file_path: &str) -> &mut dyn Worker {
+        self.config = init_config(config_file_path).expect("Failed to parse config file");
+        self
+    }
+
     fn set_data_feed(&mut self) -> &mut dyn Worker {
         self.data_feed = get_data_feed;
         self
@@ -111,7 +126,7 @@ impl Worker for BaseWorker {
     fn run(&self) {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(1));
-            let data = (self.data_feed)("BTCUSDT".to_string());
+            let data = (self.data_feed)(self.config.symbol.clone());
             println!("self: {:?}", data);
         }
     }
@@ -122,10 +137,12 @@ fn main() {
     // Init log
     init_log();
 
-    // Load confing
-    let conf = init_config("config.toml").expect("Failed to parse config file");
-
     // Pipeline
     // TODO: use spawn to create multiple workers
-    BaseWorker::new().set_data_feed().set_decision().set_order().run();
+    BaseWorker::new()
+        .load_config("config.toml")
+        .set_data_feed()
+        .set_decision()
+        .set_order()
+        .run();
 }
