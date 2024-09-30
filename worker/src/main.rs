@@ -54,30 +54,42 @@ fn init_config(config_file_path: &str) -> Result<TomlData>{
 }
 
 trait Worker {
-    fn get_data_feed(&self) -> &BaseWorker;
-    fn get_decision(&self) -> &BaseWorker;
+    fn new() -> Box<dyn Worker> where Self: Sized;
+    fn get_data_feed(&mut self) -> &mut BaseWorker;
+    fn get_decision(&mut self) -> &mut BaseWorker;
     fn make_order(&self);
 }
 
+#[derive(Debug,Default)]
 struct BaseWorker {
     data_feed: Data,
     decision: Decision
 }
 
 impl Worker for BaseWorker {
-    fn get_data_feed(&mut self) -> &self{
+    fn new() -> Box<dyn Worker>
+    where Self: Sized
+    {
+        Box::new(
+            BaseWorker {
+                data_feed: Data::default(),
+                decision: Decision::default()
+            }
+        )
+    }
+    fn get_data_feed(&mut self) -> &mut BaseWorker{
         self.data_feed = data_feed::get_data_feed("BTCUSDT".to_string());
         self
     }
 
-    fn get_decision(&mut self) -> &self{
+    fn get_decision(&mut self) -> &mut BaseWorker{
         self.decision = strategy::BaseOracle::get_decision(&self.data_feed);
         self
     }
 
     fn make_order(&self) {
         portfolio::make_order();
-        log::info!("Make order");
+        log::info!("Make order {:?}", self);
     }
 }
 
@@ -89,12 +101,9 @@ fn main() {
     // Load confing
     let conf = init_config("config.toml").expect("Failed to parse config file");
 
-    // Get a worker
-    let worker: Box<dyn Worker> = match conf.config.strategy.as_str() {
-        "BaseOracle" => Box::new(BaseWorker{ data_feed: Data {}, decision: () }),
-        _ => panic!("No such strategy"),
-    };
-
     // Pipeline
-    worker.get_data_feed().get_decision().make_order();
+    BaseWorker::new()
+        .get_data_feed()
+        .get_decision()
+        .make_order();
 }
