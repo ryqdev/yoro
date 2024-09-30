@@ -1,12 +1,14 @@
 use strategy;
+use strategy::Decision;
 
-struct Portfolio {
+#[derive(Debug)]
+struct Order{
     symbol: String,
-    balance: f32,
-    position: f32,
-    commission: f32,
+    side: String,
+    size: i32,
 }
 
-pub fn make_order(decision: strategy::Decision)  {
-    println!("Order made from decision: {:?}", decision);
+pub fn make_order()  {
+    println!("Making Order");
 }
+

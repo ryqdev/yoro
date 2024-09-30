@@ -3,7 +3,7 @@ use restful::binance::get_from_binance_api;
 use serde::Deserialize;
 
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct Data {
     pub symbol: String,
     pub price: String,

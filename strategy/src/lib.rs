@@ -1,12 +1,13 @@
 use data_feed::Data;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 enum TradeType {
+    #[default]
     Long,
     Short,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Decision {
     symbol: String,
     side: TradeType,
@@ -17,9 +18,9 @@ pub struct Decision {
 pub struct BaseOracle;
 
 impl  BaseOracle {
-    pub fn get_decision(data: Data) -> Decision {  
+    pub fn get_decision(data: &Data) -> Decision {
         Decision {
-            symbol: data.symbol,
+            symbol: data.symbol.clone(),
             side: TradeType::Long,
             size: 1,
         }
