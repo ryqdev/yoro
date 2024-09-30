@@ -1,8 +1,8 @@
 [config]
 broker = "Basetest"
-symbol = "002714.SZ"
+symbol = "BTCUSDT"
 #symbol = "AAPL"
 #symbol = "002142.SZ"
 time = "Default"
-strategy = "Test"
+strategy = "BaseOracle"
 cash = 100_000

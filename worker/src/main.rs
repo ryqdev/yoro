@@ -9,29 +9,26 @@ use portfolio;
 
 use serde_derive::Deserialize;
 use anyhow::Result;
-use env_logger::{Builder, Env};
-use log::LevelFilter;
+use env_logger;
+use log;
+use data_feed::Data;
+use strategy::Decision;
 
 fn init_log() {
-    let env = Env::default().filter_or("LOG_LEVEL", "info");
-    let level = env.log_level();
-
-    Builder::new()
+    env_logger::Builder::new()
         .format(|buf, record| {
             writeln!(
                 buf,
                 "{}:{} [{}] - {}",
-                record.file().unwrap_or_else(|| "unknown_file"),
-                record.line().unwrap_or_else(|| 0),
+                record.file().unwrap_or("unknown_file"),
+                record.line().unwrap_or(0),
                 record.level(),
                 record.args()
             )
         })
-        .filter_level(level)
-        .init()
-        .expect("Logger initialization failed");
+        .filter_level(log::LevelFilter::Info)
+        .init();
 }
-
 
 // Top level struct to hold the TOML data.
 #[derive(Deserialize, Debug)]
@@ -49,21 +46,51 @@ struct Config {
     cash: f64
 }
 
-fn parse_config(config_file_path: &str) -> Result<TomlData>{
+fn init_config(config_file_path: &str) -> Result<TomlData>{
     log::info!("start parsing config from {config_file_path}");
     let config_data: TomlData = toml::from_str(&*fs::read_to_string(config_file_path)?)?;
     log::info!("{:?}", config_data);
     Ok(config_data)
 }
 
+trait Worker {
+    fn get_data_feed(&self) -> &BaseWorker;
+    fn get_decision(&self) -> &BaseWorker;
+    fn make_order(&self);
+}
+
+struct BaseWorker;
+
+impl Worker for BaseWorker {
+    fn get_data_feed(&self) -> &BaseWorker {
+        log::info!("Get data feed");
+        self
+    }
+
+    fn get_decision(&self) -> &BaseWorker{
+        log::info!("Get decision");
+        self
+    }
+
+    fn make_order(&self) {
+        log::info!("Make order");
+    }
+}
+
+
 fn main() {
     // Init log
     init_log();
 
     // Load confing
-    let conf = parse_config("config.toml").expect("Failed to parse config file");
+    let conf = init_config("config.toml").expect("Failed to parse config file");
 
-    let data = data_feed::get_data(conf.config.symbol);
-    let decision = strategy::BaseOracle::get_decision(data);
-    portfolio::make_order(decision);
+    // Get a worker
+    let worker: Box<dyn Worker> = match conf.config.strategy.as_str() {
+        "BaseOracle" => Box::new(BaseWorker),
+        _ => panic!("No such strategy"),
+    };
+
+    // Pipeline
+    worker.get_data_feed().get_decision().make_order();
 }
