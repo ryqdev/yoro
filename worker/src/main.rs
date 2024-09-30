@@ -104,7 +104,7 @@ impl Worker for BaseWorker {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(1));
             let data = self.data_feed("BTCUSDT".to_string());
-            println!("self: {:?}", data);
+            println!("self: {:?}", self);
         }
     }
 }

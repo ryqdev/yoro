@@ -8,7 +8,7 @@ struct Order{
     size: i32,
 }
 
-pub fn make_order()  {
+pub fn make_order(_decision: &Decision)  {
     println!("Making Order");
 }
 
