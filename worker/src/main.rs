@@ -9,22 +9,27 @@ use portfolio;
 
 use serde_derive::Deserialize;
 use anyhow::Result;
-use env_logger;
+use env_logger::{Builder, Env};
+use log::LevelFilter;
 
 fn init_log() {
-    env_logger::Builder::new()
+    let env = Env::default().filter_or("LOG_LEVEL", "info");
+    let level = env.log_level();
+
+    Builder::new()
         .format(|buf, record| {
             writeln!(
                 buf,
                 "{}:{} [{}] - {}",
-                record.file().unwrap_or("unknown_file"),
-                record.line().unwrap_or(0),
+                record.file().unwrap_or_else(|| "unknown_file"),
+                record.line().unwrap_or_else(|| 0),
                 record.level(),
                 record.args()
             )
         })
-        .filter_level(log::LevelFilter::Info)
-        .init();
+        .filter_level(level)
+        .init()
+        .expect("Logger initialization failed");
 }
 
 
