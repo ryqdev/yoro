@@ -59,61 +59,49 @@ fn init_config(config_file_path: &str) -> Result<Config>{
     Ok(config_data.config)
 }
 
-trait Worker {
-    fn new() -> Box<dyn Worker> where Self: Sized;
-    fn load_config(&mut self, config_file_path: &str) -> &mut dyn Worker;
-    fn set_data_feed(&mut self) -> &mut dyn Worker;
-    fn set_decision(&mut self) -> &mut dyn Worker;
-    fn set_order(&mut self) -> &mut dyn Worker;
-    fn run(&self);
-}
 
 type DataFeedProcess = fn(String) -> Data;
 type StrategyProcess = fn(&Data) -> Decision;
 type OrderProcess = fn(&Decision);
 
 #[derive(Debug)]
-struct BaseWorker {
+struct Worker {
     data_feed: DataFeedProcess,
     strategy: StrategyProcess,
     order: OrderProcess,
     config: Config
 }
 
-impl Worker for BaseWorker {
-    fn new() -> Box<dyn Worker>
-    where Self: Sized
-    {
-        Box::new(
-            BaseWorker {
-                data_feed: get_data_feed,
-                strategy: BaseOracle::get_decision,
-                order: make_order,
-                config: Config {
-                    broker: "".to_string(),
-                    symbol: "".to_string(),
-                    strategy: "".to_string(),
-                },
-            }
-        )
+impl Worker {
+    fn new() -> Self {
+        Self {
+            data_feed: get_data_feed,
+            strategy: BaseOracle::get_decision,
+            order: make_order,
+            config: Config {
+                broker: "".to_string(),
+                symbol: "".to_string(),
+                strategy: "".to_string(),
+            },
+        }
     }
 
-    fn load_config(&mut self, config_file_path: &str) -> &mut dyn Worker {
+    fn load_config(&mut self, config_file_path: &str) -> &mut Self{
         self.config = init_config(config_file_path).expect("Failed to parse config file");
         self
     }
 
-    fn set_data_feed(&mut self) -> &mut dyn Worker {
+    fn set_data_feed(&mut self) -> &mut Self{
         self.data_feed = get_data_feed;
         self
     }
 
-    fn set_decision(&mut self) -> &mut dyn Worker {
+    fn set_decision(&mut self) -> &mut Self {
         self.strategy = BaseOracle::get_decision;
         self
     }
 
-    fn set_order(&mut self) -> &mut dyn Worker {
+    fn set_order(&mut self) -> &mut Self {
         self.order = make_order;
         log::info!("Make order {:?}", self);
         self
@@ -135,7 +123,7 @@ fn main() {
 
     // Pipeline
     // TODO: use spawn to create multiple workers
-    BaseWorker::new()
+    Worker::new()
         .load_config("config.toml")
         .set_data_feed()
         .set_decision()
