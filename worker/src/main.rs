@@ -2,7 +2,8 @@ use std::{
     io::Write,
     fs
 };
-
+use std::io::{BufRead, BufReader};
+use std::net::{TcpListener, TcpStream};
 use data_feed::{
     Data,
     get_data_feed
@@ -22,6 +23,8 @@ use anyhow::Result;
 use env_logger;
 use log;
 
+use worker::Worker;
+
 fn init_log() {
     env_logger::Builder::new()
         .format(|buf, record| {
@@ -38,95 +41,40 @@ fn init_log() {
         .init();
 }
 
-// Top level struct to hold the TOML data.
-#[derive(Deserialize, Debug)]
-struct TomlData {
-    config: Config,
-}
-
-// Config struct holds to data from the `[config]` section.
-#[derive(Deserialize, Debug)]
-struct Config {
-    broker: String,
-    symbol: String,
-    strategy: String,
-}
-
-fn init_config(config_file_path: &str) -> Result<Config>{
-    log::info!("start parsing config from {config_file_path}");
-    let config_data: TomlData = toml::from_str(&*fs::read_to_string(config_file_path)?)?;
-    log::info!("{:?}", config_data);
-    Ok(config_data.config)
-}
-
-
-type DataFeedProcess = fn(String) -> Data;
-type StrategyProcess = fn(&Data) -> Decision;
-type OrderProcess = fn(&Decision);
-
-#[derive(Debug)]
-struct Worker {
-    data_feed: DataFeedProcess,
-    strategy: StrategyProcess,
-    order: OrderProcess,
-    config: Config
-}
-
-impl Worker {
-    fn new() -> Self {
-        Self {
-            data_feed: get_data_feed,
-            strategy: BaseOracle::get_decision,
-            order: make_order,
-            config: Config {
-                broker: "".to_string(),
-                symbol: "".to_string(),
-                strategy: "".to_string(),
-            },
-        }
-    }
-
-    fn load_config(&mut self, config_file_path: &str) -> &mut Self{
-        self.config = init_config(config_file_path).expect("Failed to parse config file");
-        self
-    }
-
-    fn set_data_feed(&mut self) -> &mut Self{
-        self.data_feed = get_data_feed;
-        self
-    }
-
-    fn set_decision(&mut self) -> &mut Self {
-        self.strategy = BaseOracle::get_decision;
-        self
-    }
-
-    fn set_order(&mut self) -> &mut Self {
-        self.order = make_order;
-        log::info!("Make order {:?}", self);
-        self
-    }
-
-    fn run(&self) {
-        loop {
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            let data = (self.data_feed)(self.config.symbol.clone());
-            println!("self: {:?}", data);
-        }
-    }
-}
-
-
 fn main() {
     // Init log
     init_log();
 
-    // Pipeline
-    // TODO: use spawn to create multiple workers
-    Worker::new()
-        .load_config("config.toml")
-        .set_data_feed()
-        .set_decision()
-        .set_order()
-        .run();
+    let listener = TcpListener::bind("127.0.0.1:18888").unwrap();
+    // let pool = ThreadPool::new(4);
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+        // pool.execute(||{
+        handle_data(stream);
+        // })
+    }
+}
+
+const GET_REQUEST: &'static str = "GET / HTTP/1.1";
+
+fn handle_data(mut stream: TcpStream) {
+    let buf_reader = BufReader::new(&mut stream);
+    let request_line = buf_reader.lines().next().unwrap().unwrap();
+
+    match &request_line[..] {
+        GET_REQUEST => handle_get(),
+        _ => handle_error(),
+    };
+}
+
+fn handle_post() {
+    println!("POST request received");
+}
+
+fn handle_get() {
+    println!("GET request received");
+}
+
+fn handle_error() {
+    println!("Error request received");
 }
