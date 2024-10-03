@@ -1,16 +1,11 @@
 use std::{
     io::Write,
 };
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::net::{TcpListener, TcpStream};
 
 use env_logger;
 use log;
-
-use worker::{
-    ThreadPool,
-};
-
 
 fn init_log() {
     env_logger::Builder::new()
@@ -33,7 +28,7 @@ fn main() {
     init_log();
 
     let listener = TcpListener::bind("127.0.0.1:18888").unwrap();
-    let pool = ThreadPool::new(4);
+    let pool = worker::ThreadPool::new(4);
     for stream in listener.incoming() {
         let stream = stream.unwrap();
         pool.run(||{
@@ -43,25 +38,30 @@ fn main() {
 }
 
 const GET_REQUEST: &'static str = "GET / HTTP/1.1";
+const POST_REQUEST: &'static str = "POST / HTTP/1.1";
 
 fn handle_data(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&mut stream);
+    let mut buf_reader = BufReader::new(&mut stream);
     let request_line = buf_reader.lines().next().unwrap().unwrap();
 
     match &request_line[..] {
         GET_REQUEST => handle_get(),
+        POST_REQUEST => handle_post(),
         _ => handle_error(),
     };
+
+    let response = "HTTP/1.1 200 OK\r\n\r\n";
+    stream.write(response.as_bytes()).unwrap();
 }
 
 fn handle_post() {
     log::info!("POST request received");
+
+    portfolio::make_order(strategy::get_order(data_feed::get_data_from_stream()));
 }
 
 fn handle_get() {
-    let data = data_feed::get_data_from_stream();
-    let order = strategy::get_order(data);
-    portfolio::make_order(order);
+    log::info!("GET request received");
 }
 
 fn handle_error() {
