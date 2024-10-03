@@ -4,11 +4,6 @@ use std::thread::Thread;
 use serde_derive::Deserialize;
 use data_feed::{get_data_feed, Data};
 use portfolio::make_order;
-use strategy::{BaseOracle, Decision};
-
-type DataFeedProcess = fn(String) -> Data;
-type StrategyProcess = fn(&Data) -> Decision;
-type OrderProcess = fn(&Decision);
 
 
 pub struct ThreadPool {
@@ -56,7 +51,7 @@ impl Worker {
         let thread = thread::spawn(move|| loop {
             let job = rx.lock().unwrap().recv().unwrap();
 
-            println!("Worker {id} got a job; executing.");
+            log::info!("Worker {id} got a job; executing.");
 
             job();
         });

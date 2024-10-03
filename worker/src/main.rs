@@ -1,31 +1,14 @@
 use std::{
     io::Write,
-    fs
 };
 use std::io::{BufRead, BufReader};
 use std::net::{TcpListener, TcpStream};
-use data_feed::{
-    Data,
-    get_data_feed
-};
 
-use strategy::{
-    Decision,
-    BaseOracle
-};
-
-use portfolio::{
-    make_order
-};
-
-use serde_derive::Deserialize;
-use anyhow::Result;
 use env_logger;
 use log;
 
 use worker::{
     ThreadPool,
-    Worker
 };
 
 
@@ -72,15 +55,15 @@ fn handle_data(mut stream: TcpStream) {
 }
 
 fn handle_post() {
-    println!("POST request received");
+    log::info!("POST request received");
 }
 
 fn handle_get() {
-    println!("handle data");
-    println!("handle strategy");
-    println!("handle order");
+    let data = data_feed::get_data_from_stream();
+    let order = strategy::get_order(data);
+    portfolio::make_order(order);
 }
 
 fn handle_error() {
-    println!("Error request received");
+    log::info!("Error request received");
 }

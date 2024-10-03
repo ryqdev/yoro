@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 data_feed = {path = "../data_feed"}
+log = "0.4.22"

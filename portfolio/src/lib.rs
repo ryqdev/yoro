@@ -1,5 +1,4 @@
 use strategy;
-use strategy::Decision;
 
 #[derive(Debug)]
 struct Order{
@@ -8,7 +7,7 @@ struct Order{
     size: i32,
 }
 
-pub fn make_order(_decision: &Decision)  {
-    println!("Making Order");
+pub fn make_order(_decision: strategy::Order)  {
+    log::info!("Making Order");
 }
 

@@ -1,5 +1,3 @@
-use data_feed::Data;
-
 #[derive(Debug, Default)]
 enum TradeType {
     #[default]
@@ -8,21 +6,18 @@ enum TradeType {
 }
 
 #[derive(Debug, Default)]
-pub struct Decision {
+pub struct Order {
     symbol: String,
     side: TradeType,
     size: i32,
 }
 
-#[derive(Debug)]
-pub struct BaseOracle;
 
-impl  BaseOracle {
-    pub fn get_decision(data: &Data) -> Decision {
-        Decision {
-            symbol: data.symbol.clone(),
-            side: TradeType::Long,
-            size: 1,
-        }
+pub fn get_order(data: data_feed::Data) -> Order {
+    log::info!("handle strategy");
+    Order {
+        symbol: data.symbol.clone(),
+        side: TradeType::Long,
+        size: 1,
     }
 }
