@@ -1,4 +1,6 @@
-use std::fs;
+use std::{fs, thread};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread::Thread;
 use serde_derive::Deserialize;
 use data_feed::{get_data_feed, Data};
 use portfolio::make_order;
@@ -9,57 +11,56 @@ type StrategyProcess = fn(&Data) -> Decision;
 type OrderProcess = fn(&Decision);
 
 
+pub struct ThreadPool {
+    workers: Vec<Worker>,
+    tx: mpsc::Sender<Job>,
+}
 
+impl ThreadPool {
+    pub fn new(size: usize) -> Self {
+        let (tx, rx) = mpsc::channel();
+        let rx = Arc::new(Mutex::new(rx));
+        let mut workers = Vec::with_capacity(size);
+        for id in 0..size {
+            workers.push(Worker::new(id, Arc::clone(&rx)))
+        }
+        Self {
+            workers,
+            tx
+        }
+    }
+
+    pub fn run<F>(&self, f: F)
+    where F: FnOnce() + Send + 'static
+    {
+        let job = Box::new(f);
+        self.tx.send(job).unwrap()
+    }
+
+}
+
+type Job = Box<dyn FnOnce() + Send + 'static>;
 
 #[derive(Debug)]
 pub struct Worker {
-    data_feed: DataFeedProcess,
-    strategy: StrategyProcess,
-    order: OrderProcess,
-    config: Config
+    id: usize,
+    thread: thread::JoinHandle<()>,
+    // data_feed: DataFeedProcess,
+    // strategy: StrategyProcess,
+    // order: OrderProcess,
+    // config: Config
 }
 
 impl Worker {
-    pub fn new() -> Self {
-        Self {
-            data_feed: get_data_feed,
-            strategy: BaseOracle::get_decision,
-            order: make_order,
-            config: Config {
-                broker: "".to_string(),
-                symbol: "".to_string(),
-                strategy: "".to_string(),
-            },
-        }
-    }
+    pub fn new(id: usize, rx: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
+        let thread = thread::spawn(move|| loop {
+            let job = rx.lock().unwrap().recv().unwrap();
 
-    pub fn load_config(&mut self, config_file_path: &str) -> &mut Self{
-        self.config = init_config(config_file_path).expect("Failed to parse config file");
-        self
-    }
+            println!("Worker {id} got a job; executing.");
 
-    pub fn set_data_feed(&mut self) -> &mut Self{
-        self.data_feed = get_data_feed;
-        self
-    }
-
-    pub fn set_decision(&mut self) -> &mut Self {
-        self.strategy = BaseOracle::get_decision;
-        self
-    }
-
-    pub fn set_order(&mut self) -> &mut Self {
-        self.order = make_order;
-        log::info!("Make order {:?}", self);
-        self
-    }
-
-    pub fn run(&self) {
-        loop {
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            let data = (self.data_feed)(self.config.symbol.clone());
-            println!("self: {:?}", data);
-        }
+            job();
+        });
+        Self {id, thread}
     }
 }
 

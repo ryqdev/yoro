@@ -23,7 +23,11 @@ use anyhow::Result;
 use env_logger;
 use log;
 
-use worker::Worker;
+use worker::{
+    ThreadPool,
+    Worker
+};
+
 
 fn init_log() {
     env_logger::Builder::new()
@@ -46,12 +50,12 @@ fn main() {
     init_log();
 
     let listener = TcpListener::bind("127.0.0.1:18888").unwrap();
-    // let pool = ThreadPool::new(4);
+    let pool = ThreadPool::new(4);
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        // pool.execute(||{
-        handle_data(stream);
-        // })
+        pool.run(||{
+            handle_data(stream);
+        })
     }
 }
 
@@ -72,7 +76,9 @@ fn handle_post() {
 }
 
 fn handle_get() {
-    println!("GET request received");
+    println!("handle data");
+    println!("handle strategy");
+    println!("handle order");
 }
 
 fn handle_error() {
