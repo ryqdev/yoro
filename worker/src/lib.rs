@@ -1,71 +1,11 @@
-use std::{fs, thread};
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread::Thread;
+use std::fs;
 use serde_derive::Deserialize;
-use data_feed::{get_data_feed, Data};
-use portfolio::make_order;
 
-
-pub struct ThreadPool {
-    workers: Vec<Worker>,
-    tx: mpsc::Sender<Job>,
-}
-
-impl ThreadPool {
-    pub fn new(size: usize) -> Self {
-        let (tx, rx) = mpsc::channel();
-        let rx = Arc::new(Mutex::new(rx));
-        let mut workers = Vec::with_capacity(size);
-        for id in 0..size {
-            workers.push(Worker::new(id, Arc::clone(&rx)))
-        }
-        Self {
-            workers,
-            tx
-        }
-    }
-
-    pub fn run<F>(&self, f: F)
-    where F: FnOnce() + Send + 'static
-    {
-        let job = Box::new(f);
-        self.tx.send(job).unwrap()
-    }
-
-}
-
-type Job = Box<dyn FnOnce() + Send + 'static>;
-
-#[derive(Debug)]
-pub struct Worker {
-    id: usize,
-    thread: thread::JoinHandle<()>,
-    // data_feed: DataFeedProcess,
-    // strategy: StrategyProcess,
-    // order: OrderProcess,
-    // config: Config
-}
-
-impl Worker {
-    pub fn new(id: usize, rx: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
-        let thread = thread::spawn(move|| loop {
-            let job = rx.lock().unwrap().recv().unwrap();
-
-            log::info!("Worker {id} got a job; executing.");
-
-            job();
-        });
-        Self {id, thread}
-    }
-}
-
-// Top level struct to hold the TOML data.
 #[derive(Deserialize, Debug)]
 struct TomlData {
     config: Config,
 }
 
-// Config struct holds to data from the `[config]` section.
 #[derive(Deserialize, Debug)]
 struct Config {
     broker: String,
@@ -80,3 +20,17 @@ fn init_config(config_file_path: &str) -> anyhow::Result<Config> {
     Ok(config_data.config)
 }
 
+pub struct Worker {
+    symbol: String
+}
+
+
+impl Worker {
+    pub fn init(){
+        let config = init_config("config.toml").unwrap();
+    }
+
+    pub fn run() {
+        portfolio::make_order(strategy::get_order(data_feed::get_data_from_stream()));
+    }
+}

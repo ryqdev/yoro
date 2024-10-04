@@ -1,11 +1,13 @@
-use std::{
-    io::Write,
-};
-use std::io::{BufRead, BufReader, Read};
-use std::net::{TcpListener, TcpStream};
+use std::{fs, io::{Write}, thread};
 
-use env_logger;
-use log;
+use axum::{
+    routing::{get, post},
+    http::StatusCode,
+    Json, Router,
+    response::{IntoResponse, Response},
+};
+
+use serde::{Deserialize, Serialize};
 
 fn init_log() {
     env_logger::Builder::new()
@@ -23,47 +25,38 @@ fn init_log() {
         .init();
 }
 
-fn main() {
-    // Init log
+#[tokio::main]
+async fn main() {
+
     init_log();
 
-    let listener = TcpListener::bind("127.0.0.1:18888").unwrap();
-    let pool = worker::ThreadPool::new(4);
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-        pool.run(||{
-            handle_data(stream);
-        })
-    }
+    // TODO: Struct or macro?
+    worker::Worker::init();
+
+    let app = Router::new()
+        .route("/", get(root))
+        .route("/data", post(handle_post));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:18888").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
-const GET_REQUEST: &'static str = "GET / HTTP/1.1";
-const POST_REQUEST: &'static str = "POST / HTTP/1.1";
-
-fn handle_data(mut stream: TcpStream) {
-    let mut buf_reader = BufReader::new(&mut stream);
-    let request_line = buf_reader.lines().next().unwrap().unwrap();
-
-    match &request_line[..] {
-        GET_REQUEST => handle_get(),
-        POST_REQUEST => handle_post(),
-        _ => handle_error(),
-    };
-
-    let response = "HTTP/1.1 200 OK\r\n\r\n";
-    stream.write(response.as_bytes()).unwrap();
+// basic handler that responds with a static string
+async fn root() -> &'static str {
+    "Hello, yoro!"
 }
 
-fn handle_post() {
-    log::info!("POST request received");
-
-    portfolio::make_order(strategy::get_order(data_feed::get_data_from_stream()));
+#[derive(Deserialize, Debug)]
+struct DataStream{
+    price: String,
 }
 
-fn handle_get() {
-    log::info!("GET request received");
-}
+async fn handle_post(
+    Json(payload): Json<DataStream>,
+)  -> impl IntoResponse{
+    log::info!("POST request received, payload: {:#?}", payload);
 
-fn handle_error() {
-    log::info!("Error request received");
+    worker::run();
+
+    (StatusCode::OK, "[OK]")
 }
