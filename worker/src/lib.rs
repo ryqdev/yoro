@@ -26,11 +26,16 @@ pub struct Worker {
 
 
 impl Worker {
-    pub fn init(){
+    pub fn init() -> Self{
+        log::info!("init worker...");
         let config = init_config("config.toml").unwrap();
+        Self{
+            symbol: config.strategy
+        }
     }
 
     pub fn run() {
+        log::info!("running...");
         portfolio::make_order(strategy::get_order(data_feed::get_data_from_stream()));
     }
 }

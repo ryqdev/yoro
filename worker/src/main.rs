@@ -1,5 +1,5 @@
 use std::{fs, io::{Write}, thread};
-
+use std::time::Duration;
 use axum::{
     routing::{get, post},
     http::StatusCode,
@@ -31,7 +31,8 @@ async fn main() {
     init_log();
 
     // TODO: Struct or macro?
-    worker::Worker::init();
+    // Use singleton?
+    let worker = worker::Worker::init();
 
     let app = Router::new()
         .route("/", get(root))
@@ -41,7 +42,6 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-// basic handler that responds with a static string
 async fn root() -> &'static str {
     "Hello, yoro!"
 }
@@ -56,7 +56,9 @@ async fn handle_post(
 )  -> impl IntoResponse{
     log::info!("POST request received, payload: {:#?}", payload);
 
-    worker::run();
+
+    thread::sleep(Duration::from_secs(5));
+    worker::Worker::run();
 
     (StatusCode::OK, "[OK]")
 }
