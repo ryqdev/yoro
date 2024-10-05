@@ -30,8 +30,6 @@ async fn main() {
 
     init_log();
 
-    // TODO: Struct or macro?
-    // Use singleton?
     let worker = worker::Worker::init();
 
     let app = Router::new()
@@ -56,8 +54,6 @@ async fn handle_post(
 )  -> impl IntoResponse{
     log::info!("POST request received, payload: {:#?}", payload);
 
-
-    thread::sleep(Duration::from_secs(5));
     worker::Worker::run();
 
     (StatusCode::OK, "[OK]")

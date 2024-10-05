@@ -1,4 +1,5 @@
-use std::fs;
+use std::{fs, thread};
+use std::time::Duration;
 use serde_derive::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -36,6 +37,9 @@ impl Worker {
 
     pub fn run() {
         log::info!("running...");
+        thread::sleep(Duration::from_secs(5));
+        log::info!("finished");
+
         portfolio::make_order(strategy::get_order(data_feed::get_data_from_stream()));
     }
 }
