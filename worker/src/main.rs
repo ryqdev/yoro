@@ -26,7 +26,7 @@ fn init_log() {
                 record.args(),
             )
         })
-        .target(env_logger::Target::Pipe(output_file))
+        .target(env_logger::Target::Pipe(output_file)) // write to local file
         .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
         .filter_level(log::LevelFilter::Info)
         .init();
