@@ -1,3 +1,3 @@
 # yoro
 
-You only need to be rich once
+Trading system with Rust
