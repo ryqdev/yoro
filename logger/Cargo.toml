@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+crossbeam-channel = "0.5.13"
+chrono = "0.4.38"
+anyhow = "1.0.91"
+log = "0.4.22"
